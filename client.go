@@ -1,6 +1,8 @@
 package uploadfly
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"mime/multipart"
@@ -83,7 +85,41 @@ func (c *Client) Upload(opt *UploadFileOption) (*UploadedFile, error) {
 	return nil, nil
 }
 
+type DeleteFileOption struct {
+	FileURL string `json:"file_url"`
+}
+
 // This deletes a single file
-func (c *Client) Delete(fileURL string) error {
+func (c *Client) Delete(opts *DeleteFileOption) error {
+	buf := new(bytes.Buffer)
+
+	if err := json.NewEncoder(buf).Encode(&opts); err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/delete", baseEndpoint), buf)
+	if err != nil {
+		return err
+	}
+
+	res, err := c.c.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode > http.StatusCreated {
+		var w struct {
+			Message string `json:"message"`
+		}
+
+		if err := json.NewDecoder(res.Body).Decode(&w); err != nil {
+			return err
+		}
+
+		return errors.New(w.Message)
+	}
+
 	return nil
 }
