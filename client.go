@@ -85,15 +85,17 @@ func (c *Client) Upload(opt *UploadFileOption) (*UploadedFile, error) {
 	return nil, nil
 }
 
-type DeleteFileOption struct {
-	FileURL string `json:"file_url"`
-}
-
 // This deletes a single file
-func (c *Client) Delete(opts *DeleteFileOption) error {
+func (c *Client) Delete(url string) error {
+	var options = struct {
+		FileURL string `json:"file_url"`
+	}{
+		FileURL: url,
+	}
+
 	buf := new(bytes.Buffer)
 
-	if err := json.NewEncoder(buf).Encode(&opts); err != nil {
+	if err := json.NewEncoder(buf).Encode(&options); err != nil {
 		return err
 	}
 
